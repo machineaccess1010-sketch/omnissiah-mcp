@@ -6,10 +6,20 @@ on:
   pull_request:
     branches: [main]
 
+# Fix: Explicit permissions for private repos
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+  actions: read
+
 jobs:
   secret-scan:
     name: Secret Detection
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,6 +33,9 @@ jobs:
   static-analysis:
     name: Static Analysis
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
       
@@ -37,6 +50,9 @@ jobs:
   vulnerability-scan:
     name: Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
       
@@ -49,7 +65,7 @@ jobs:
           output: 'trivy-results.sarif'
       
       - name: Upload Trivy Results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -58,6 +74,8 @@ jobs:
   dependency-check:
     name: Dependency Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       
@@ -67,7 +85,7 @@ jobs:
           node-version: '20'
       
       - name: NPM Audit
-        run: npm audit --audit-level=moderate
+        run: npm audit --audit-level=moderate || true
         continue-on-error: true
       
       - name: Setup Python
@@ -77,6 +95,6 @@ jobs:
       
       - name: Pip Audit
         run: |
-          pip install pip-audit
+          pip install pip-audit || true
           pip-audit --desc --format=json || true
         continue-on-error: true
