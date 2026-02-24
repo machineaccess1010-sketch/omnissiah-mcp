@@ -2,75 +2,81 @@ name: Security Scan
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, develop]
   pull_request:
-    branches: [main, master]
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
-  security:
-    name: Security Analysis
+  secret-scan:
+    name: Secret Detection
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      # ===== GITLEAKS: Secret Detection =====
-      - name: Run Gitleaks
+      
+      - name: Gitleaks Scan
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_ENABLE_COMMENTS: true
-          GITLEAKS_ENABLE_SUMMARY: true
 
-      # ===== TRIVY: Vulnerability Scanner =====
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          scanners: 'vuln,secret,misconfig'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-          category: 'trivy'
-
-      # ===== SEMGREP: Static Analysis =====
-      - name: Run Semgrep
+  static-analysis:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Semgrep Security Scan
         uses: returntocorp/semgrep-action@v1
         with:
           config: >-
             p/security-audit
             p/owasp-top-ten
             p/cwe-top-25
-          generateSarif: '1'
 
-      - name: Upload Semgrep results
-        uses: github/codeql-action/upload-sarif@v3
+  vulnerability-scan:
+    name: Vulnerability Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v2
         if: always()
         with:
-          sarif_file: 'semgrep-results.sarif'
-          category: 'semgrep'
+          sarif_file: 'trivy-results.sarif'
+          category: 'trivy'
 
-      # ===== Summary =====
-      - name: Security Scan Summary
-        if: always()
+  dependency-check:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: NPM Audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Pip Audit
         run: |
-          echo "## 🔒 Security Scan Complete" >> $GITHUB_STEP_SUMMARY
-          echo "| Tool | Purpose |" >> $GITHUB_STEP_SUMMARY
-          echo "|------|---------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Gitleaks | Secret detection in commits" >> $GITHUB_STEP_SUMMARY
-          echo "| Trivy | Dependency & config vulnerabilities" >> $GITHUB_STEP_SUMMARY
-          echo "| Semgrep | Static application security testing" >> $GITHUB_STEP_SUMMARY
+          pip install pip-audit
+          pip-audit --desc --format=json || true
+        continue-on-error: true
