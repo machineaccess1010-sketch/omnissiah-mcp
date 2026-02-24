@@ -1,0 +1,61 @@
+# Pre-commit hooks for local security checks
+# Install: pip install pre-commit && pre-commit install
+# Run all hooks: pre-commit run --all-files
+# Run specific hook: pre-commit run gitleaks
+
+repos:
+  # ===== GITLEAKS: Prevent secrets in commits =====
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.2
+    hooks:
+      - id: gitleaks
+        name: Gitleaks - Secret Detection
+        description: Detect secrets in staged files
+        stages: [commit]
+
+  # ===== SEMGREP: Local static analysis =====
+  - repo: https://github.com/returntocorp/semgrep
+    rev: v1.57.0
+    hooks:
+      - id: semgrep
+        name: Semgrep - Security Scan
+        description: Run Semgrep security rules on staged files
+        args: ['--config=auto', '--error']
+        stages: [commit]
+        pass_filenames: false
+
+  # ===== GENERAL FILE CHECKS =====
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        name: Check Large Files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
+      - id: detect-private-key
+        name: Detect Private Keys
+
+  # ===== SWIFTLINT: Swift style & security (if using Swift) =====
+  # Uncomment if your project uses Swift
+  # - repo: https://github.com/realm/SwiftLint
+  #   rev: 0.54.0
+  #   hooks:
+  #     - id: swiftlint
+  #       name: SwiftLint
+  #       description: Swift style and security linter
+  #       entry: swiftlint lint --quiet
+  #       language: system
+  #       types: [swift]
+
+  # ===== CUSTOM LOCAL HOOKS =====
+  - repo: local
+    hooks:
+      - id: check-for-env-files
+        name: Check for .env files
+        entry: bash -c 'if git diff --cached --name-only | grep -qE "\.env($|\.local|\.prod|\.dev)"; then echo "❌ ERROR: Do not commit .env files!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+        stages: [commit]

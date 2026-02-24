@@ -1,0 +1,106 @@
+# Dependabot configuration for automated dependency updates
+# This file configures GitHub Dependabot to automatically create PRs
+# for security updates and version bumps.
+#
+# Documentation: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+
+updates:
+  # ===== NODE/NPM DEPENDENCIES =====
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "machineaccess"
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "npm"
+      include: "scope"
+    # Security updates only (set to true for all updates)
+    # allow:
+    #   - dependency-type: "direct"
+    #     update-type: "security"
+
+  # ===== PYTHON/PIP DEPENDENCIES =====
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "machineaccess"
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "pip"
+      include: "scope"
+
+  # ===== GITHUB ACTIONS =====
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "machineaccess"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "github-actions"
+      include: "scope"
+
+  # ===== DOCKER =====
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "machineaccess"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+
+  # ===== RUST/CARGO (uncomment if using Rust) =====
+  # - package-ecosystem: "cargo"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "monday"
+  #     time: "09:00"
+  #   reviewers:
+  #     - "machineaccess"
+  #   labels:
+  #     - "dependencies"
+  #     - "rust"
+
+  # ===== SWIFT PACKAGE MANAGER (uncomment if using Swift) =====
+  # - package-ecosystem: "swift"
+  #   directory: "/"
+  #   schedule:
+  #     interval: "weekly"
+  #     day: "monday"
+  #     time: "09:00"
+  #   reviewers:
+  #     - "machineaccess"
+  #   labels:
+  #     - "dependencies"
+  #     - "swift"
